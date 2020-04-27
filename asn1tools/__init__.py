@@ -279,6 +279,7 @@ def _do_generate_c_source(args):
         compiled,
         args.codec,
         name,
+        args.modular,
         filename_h,
         filename_c,
         fuzzer_filename_c)
@@ -402,6 +403,10 @@ def _main():
         '-f', '--generate-fuzzer',
         action='store_true',
         help='Also generate fuzzer source code.')
+    subparser.add_argument(
+        '-m', '--modular',
+        action='store_true',
+        help='Generate code to use in a modular environment.')
     subparser.add_argument('specification',
                            nargs='+',
                            help='ASN.1 specification as one or more .asn files.')

@@ -360,6 +360,7 @@ def _generate_fuzzer_source(namespace,
 def generate(compiled,
              codec,
              namespace,
+             modular,
              header_name,
              source_name,
              fuzzer_source_name):
@@ -367,6 +368,9 @@ def generate(compiled,
 
     `namespace` is used as a prefix for all defines, data structures
     and functions.
+
+    `modular` is a flag that controls the code generation for use with the
+    code as a module.
 
     `header_name` is the file name of the C header file, which is
     included by the C source file.
@@ -389,7 +393,8 @@ def generate(compiled,
     if codec == 'oer':
         structs, declarations, helpers, definitions = oer.generate(
             compiled,
-            namespace)
+            namespace,
+            modular)
     elif codec == 'uper':
         structs, declarations, helpers, definitions = uper.generate(
             compiled,

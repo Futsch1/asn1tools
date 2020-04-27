@@ -707,8 +707,8 @@ def format_null_inner():
 
 class _Generator(Generator):
 
-    def __init__(self, namespace):
-        super(_Generator, self).__init__(namespace)
+    def __init__(self, namespace, modular):
+        super(_Generator, self).__init__(namespace, modular, 'oer_')
         self.additional_helpers = {}
 
     def format_real(self, type_):
@@ -828,13 +828,15 @@ class _Generator(Generator):
 
         return (
             [
-                'encoder_append_{}(encoder_p, src_p->{});'.format(
+                '{}encoder_append_{}(encoder_p, src_p->{});'.format(
+                    self.prefix,
                     type_name,
                     self.location_inner())
             ],
             [
-                'dst_p->{} = decoder_read_{}(decoder_p);'.format(
+                'dst_p->{} = {}decoder_read_{}(decoder_p);'.format(
                     self.location_inner(),
+                    self.prefix,
                     type_name)
             ]
         )
@@ -845,12 +847,14 @@ class _Generator(Generator):
     def format_boolean_inner(self):
         return (
             [
-                'encoder_append_bool(encoder_p, src_p->{});'.format(
+                '{}encoder_append_bool(encoder_p, src_p->{});'.format(
+                    self.prefix,
                     self.location_inner())
             ],
             [
-                'dst_p->{} = decoder_read_bool(decoder_p);'.format(
-                    self.location_inner())
+                'dst_p->{} = {}decoder_read_bool(decoder_p);'.format(
+                    self.location_inner(),
+                self.prefix,)
             ]
         )
 
@@ -862,13 +866,15 @@ class _Generator(Generator):
 
         return (
             [
-                'encoder_append_{}(encoder_p, src_p->{});'.format(
+                '{}encoder_append_{}(encoder_p, src_p->{});'.format(
+                    self.prefix,
                     c_type,
                     self.location_inner())
             ],
             [
-                'dst_p->{} = decoder_read_{}(decoder_p);'.format(
+                'dst_p->{} = {}decoder_read_{}(decoder_p);'.format(
                     self.location_inner(),
+                    self.prefix,
                     c_type)
             ]
         )
@@ -906,7 +912,7 @@ class _Generator(Generator):
             encode_lines.append('')
 
             decode_lines += [
-                'decoder_read_bytes(decoder_p,',
+                '{}decoder_read_bytes(decoder_p,'.format(self.prefix),
                 '                   &{}[0],'.format(unique_present_mask),
                 '                   sizeof({}));'.format(unique_present_mask),
                 ''
@@ -947,7 +953,7 @@ class _Generator(Generator):
                     ]
 
             encode_lines += [
-                'encoder_append_bytes(encoder_p,',
+                '{}encoder_append_bytes(encoder_p,'.format(self.prefix),
                 '                     &{}[0],'.format(unique_present_mask),
                 '                     sizeof({}));'.format(unique_present_mask),
                 ''
@@ -999,32 +1005,37 @@ class _Generator(Generator):
         addition_mask_length = get_sequence_additions_mask_length(type_.additions)
         addition_mask_unused_bits = (addition_mask_length * 8) - len(type_.additions)
 
-        encode_lines.append('encoder_append_length_determinant(encoder_p, {});'.format(
+        encode_lines.append('{}encoder_append_length_determinant(encoder_p, {});'.format(
+            self.prefix,
             addition_mask_length + 1))
         unique_addition_length = self.add_unique_decode_variable(
             'uint32_t {};', 'addition_length')
         decode_lines += [
-            '{} = decoder_read_length_determinant(decoder_p);'.format(
-                unique_addition_length),
+            '{} = {}decoder_read_length_determinant(decoder_p);'.format(
+                unique_addition_length,
+                self.prefix),
             '',
             'if({} <= 1u) {{'.format(unique_addition_length),
-            '    decoder_abort(decoder_p, EBADLENGTH);',
+            '    {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
             '',
             '    return;',
             '}',
             '{} -= 1u;'.format(unique_addition_length)]
 
-        encode_lines.append('encoder_append_uint8(encoder_p, {});'.format(
+        encode_lines.append('{}encoder_append_uint8(encoder_p, {});'.format(
+            self.prefix,
             addition_mask_unused_bits))
         unique_addition_unused_bits = self.add_unique_decode_variable(
             'uint8_t {};', 'addition_unused_bits')
         unique_addition_bits = self.add_unique_decode_variable(
             'uint32_t {};', 'addition_bits')
         decode_lines += [
-            '{} = decoder_read_uint8(decoder_p);'.format(unique_addition_unused_bits),
+            '{} = {}decoder_read_uint8(decoder_p);'.format(
+                unique_addition_unused_bits,
+                self.prefix),
             '',
             'if ({} > 7u) {{'.format(unique_addition_unused_bits),
-            '    decoder_abort(decoder_p, EBADLENGTH);',
+            '    {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
             '',
             '    return;',
             '}',
@@ -1051,7 +1062,7 @@ class _Generator(Generator):
                 '}'
             ]
         encode_lines += [
-            'encoder_append_bytes(encoder_p,',
+            '{}encoder_append_bytes(encoder_p,'.format(self.prefix),
             '                     &{}[0],'.format(unique_addition_mask),
             '                     sizeof({}));'.format(unique_addition_mask)]
 
@@ -1063,7 +1074,7 @@ class _Generator(Generator):
         unique_mask = self.add_unique_decode_variable('uint8_t {};', 'mask')
 
         decode_lines += [
-            'decoder_read_bytes(decoder_p,',
+            '{}decoder_read_bytes(decoder_p,'.format(self.prefix),
             '                   {mask},'.format(mask=unique_addition_mask),
             '                   ({read} < {defined}u) ? {read} : {defined}u);'.format(
                 read=unique_addition_length, defined=addition_mask_length),
@@ -1077,7 +1088,8 @@ class _Generator(Generator):
                                                   unique_addition_bits),
             '',
             '    if ({} == 0u) {{'.format(unique_mask),
-            '        decoder_read_bytes(decoder_p, &{}, 1);'.format(
+            '        {}decoder_read_bytes(decoder_p, &{}, 1);'.format(
+                self.prefix,
                 unique_tmp_addition_mask),
             '',
             '        if (decoder_get_result(decoder_p) < 0) {',
@@ -1108,7 +1120,8 @@ class _Generator(Generator):
 
             member_checker = self.get_member_checker(checker, addition.name)
             encoded_lengths = self.get_encoded_type_lengths(addition, member_checker)
-            encoder_line = 'encoder_append_length_determinant(encoder_p, {});'.format(
+            encoder_line = '{}encoder_append_length_determinant(encoder_p, {});'.format(
+                self.prefix,
                 encoded_lengths_as_string(encoded_lengths))
             wrapped_encoder_lines = textwrap.wrap(encoder_line, 100,
                                                   subsequent_indent=' ' * 4)
@@ -1135,7 +1148,8 @@ class _Generator(Generator):
                 'if (dst_p->{location}is_{name}_addition_present) {{'.format(
                     location=self.location_inner('', '.'),
                     name=addition.name),
-                '    (void)decoder_read_length_determinant(decoder_p);'
+                '    (void){}decoder_read_length_determinant(decoder_p);'.format(
+                    self.prefix)
             ] + indent_lines(addition_decode_lines) + [
                 '}',
                 '']
@@ -1146,10 +1160,13 @@ class _Generator(Generator):
                 i=unique_i,
                 first_bit=len(type_.additions),
                 unique_unknown_addition_bits=unique_unknown_addition_bits),
-            '    {} = decoder_read_length_determinant(decoder_p);'.format(
-                unique_tmp_length),
+            '    {} = {}decoder_read_length_determinant(decoder_p);'.format(
+                unique_tmp_length,
+                self.prefix),
             '',
-            '    if (decoder_free(decoder_p, {}) < 0) {{'.format(unique_tmp_length),
+            '    if ({}decoder_free(decoder_p, {}) < 0) {{'.format(
+                self.prefix,
+                unique_tmp_length),
             '',
             '        return;',
             '    }',
@@ -1194,7 +1211,7 @@ class _Generator(Generator):
 
         if checker.minimum == checker.maximum:
             encode_lines = [
-                'encoder_append_bytes(encoder_p,',
+                '{}encoder_append_bytes(encoder_p,'.format(self.prefix),
                 '                     &src_p->{}buf[0],'.format(location),
                 '                     {});'.format(checker.maximum)
             ]
@@ -1205,45 +1222,49 @@ class _Generator(Generator):
             ]
         elif checker.maximum < 128:
             encode_lines = [
-                'encoder_append_uint8(encoder_p, src_p->{}length);'.format(
+                '{}encoder_append_uint8(encoder_p, src_p->{}length);'.format(
+                    self.prefix,
                     location),
-                'encoder_append_bytes(encoder_p,',
+                '{}encoder_append_bytes(encoder_p,'.format(self.prefix),
                 '                     &src_p->{}buf[0],'.format(location),
                 '                     src_p->{}length);'.format(location)
             ]
             decode_lines = [
-                'dst_p->{}length = decoder_read_uint8(decoder_p);'.format(
-                    location),
+                'dst_p->{}length = {}decoder_read_uint8(decoder_p);'.format(
+                    location,
+                self.prefix,),
                 '',
                 'if (dst_p->{}length > {}u) {{'.format(location, checker.maximum),
-                '    decoder_abort(decoder_p, EBADLENGTH);',
+                '    {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
                 '',
                 '    return;',
                 '}',
                 '',
-                'decoder_read_bytes(decoder_p,',
+                '{}decoder_read_bytes(decoder_p,'.format(self.prefix),
                 '                   &dst_p->{}buf[0],'.format(location),
                 '                   dst_p->{}length);'.format(location)
             ]
         else:
             encode_lines = [
-                'encoder_append_length_determinant(encoder_p, src_p->{}length);'.format(
+                '{}encoder_append_length_determinant(encoder_p, src_p->{}length);'.format(
+                    self.prefix,
                     location),
-                'encoder_append_bytes(encoder_p,',
+                '{}encoder_append_bytes(encoder_p,'.format(self.prefix),
                 '                     &src_p->{}buf[0],'.format(location),
                 '                     src_p->{}length);'.format(location)
             ]
             decode_lines = [
-                'dst_p->{}length = decoder_read_length_determinant(decoder_p);'.format(
-                    location),
+                'dst_p->{}length = {}decoder_read_length_determinant(decoder_p);'.format(
+                    location,
+                    self.prefix),
                 '',
                 'if (dst_p->{}length > {}u) {{'.format(location, checker.maximum),
-                '    decoder_abort(decoder_p, EBADLENGTH);',
+                '    {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
                 '',
                 '    return;',
                 '}',
                 '',
-                'decoder_read_bytes(decoder_p,',
+                '{}decoder_read_bytes(decoder_p,'.format(self.prefix),
                 '                   &dst_p->{}buf[0],'.format(location),
                 '                   dst_p->{}length);'.format(location)
             ]
@@ -1259,7 +1280,9 @@ class _Generator(Generator):
                 location = self.location_inner('', '.')
                 src_length = 'src_p->{}length'.format(location)
 
-                return ['length_determinant_length({})'.format(src_length),
+                return ['{}length_determinant_length({})'.format(
+                    self.prefix,
+                    src_length),
                         src_length]
 
     def get_user_type_prefix(self, type_name, module_name):
@@ -1313,7 +1336,8 @@ class _Generator(Generator):
             tag = '0x{{:0{}x}}'.format(2 * tag_length).format(tag)
 
             choice_encode_lines = [
-                'encoder_append_uint(encoder_p, {}, {});'.format(
+                '{}encoder_append_uint(encoder_p, {}, {});'.format(
+                    self.prefix,
                     tag,
                     tag_length)
             ] + choice_encode_lines + [
@@ -1344,20 +1368,22 @@ class _Generator(Generator):
             ''
         ] + encode_lines + [
             'default:',
-            '    encoder_abort(encoder_p, EBADCHOICE);',
+            '    {}encoder_abort(encoder_p, EBADCHOICE);'.format(self.prefix),
             '    break;',
             '}',
             ''
         ]
 
         decode_lines = [
-            '{} = decoder_read_tag(decoder_p);'.format(unique_tag),
+            '{} = {}decoder_read_tag(decoder_p);'.format(
+                unique_tag,
+                self.prefix),
             '',
             'switch ({}) {{'.format(unique_tag),
             ''
         ] + decode_lines + [
             'default:',
-            '    decoder_abort(decoder_p, EBADCHOICE);',
+            '    {}decoder_abort(decoder_p, EBADCHOICE);'.format(self.prefix),
             '    break;',
             '}',
             ''
@@ -1435,33 +1461,43 @@ class _Generator(Generator):
                 unique_enum_length, self.location_inner()),
             '',
             'if ({} != 0u) {{'.format(unique_enum_length),
-            '    encoder_append_uint8(encoder_p, 0x80u | {});'.format(
+            '    {}encoder_append_uint8(encoder_p, 0x80u | {});'.format(
+                self.prefix,
                 unique_enum_length),
-            '    encoder_append_int(encoder_p, (int32_t)src_p->{}, {});'.format(
+            '    {}encoder_append_int(encoder_p, (int32_t)src_p->{}, {});'.format(
+                self.prefix,
                 self.location_inner(), unique_enum_length),
             '}',
             'else {',
-            '    encoder_append_uint8(encoder_p, (uint8_t)src_p->{});'.format(
+            '    {}encoder_append_uint8(encoder_p, (uint8_t)src_p->{});'.format(
+                self.prefix,
                 self.location_inner()),
             '}']
         decode_lines += [
-            '{} = decoder_read_uint8(decoder_p);'.format(unique_enum_length),
+            '{} = {}decoder_read_uint8(decoder_p);'.format(
+                unique_enum_length,
+                self.prefix),
             '',
             'if (({} & 0x80u) == 0x80u) {{'.format(unique_enum_length),
             '    {} &= 0x7fu;'.format(unique_enum_length),
             '',
             '    if (({length} > {type_length}u) || ({length} == 0u)) {{'.format(
                 type_length=type_length, length=unique_enum_length),
-            '        decoder_abort(decoder_p, EBADLENGTH);',
+            '        {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
             '',
             '        return;',
             '    }',
-            '    dst_p->{} = (enum {})decoder_read_int(decoder_p, {});'.format(
-                self.location_inner(), type_name, unique_enum_length),
+            '    dst_p->{} = (enum {}){}decoder_read_int(decoder_p, {});'.format(
+                self.location_inner(),
+                type_name,
+                self.prefix,
+                unique_enum_length),
             '}',
             'else {',
-            '    dst_p->{} = (enum {}){};'.format(self.location_inner(), type_name,
-                                                  unique_enum_length),
+            '    dst_p->{} = (enum {}){};'.format(
+                self.location_inner(),
+                type_name,
+                unique_enum_length),
             '}']
 
         return encode_lines, decode_lines
@@ -1495,9 +1531,10 @@ class _Generator(Generator):
                 '{} = minimum_uint_length({});'.format(
                     unique_number_of_length_bytes,
                     checker.maximum),
-                'encoder_append_uint8(encoder_p, {});'.format(
+                '{}encoder_append_uint8(encoder_p, {});'.format(
+                    self.prefix,
                     unique_number_of_length_bytes),
-                'encoder_append_uint(encoder_p,',
+                '{}encoder_append_uint(encoder_p,'.format(self.prefix),
                 '                    {},'.format(checker.maximum),
                 '                    {});'.format(unique_number_of_length_bytes),
                 '',
@@ -1506,14 +1543,17 @@ class _Generator(Generator):
                     maximum=checker.maximum),
             ] + indent_lines(encode_lines)
             decode_lines = [
-                '{} = decoder_read_uint8(decoder_p);'.format(
-                    unique_number_of_length_bytes),
-                '{} = decoder_read_uint8(decoder_p);'.format(unique_length),
+                '{} = {}decoder_read_uint8(decoder_p);'.format(
+                    unique_number_of_length_bytes,
+                    self.prefix),
+                '{} = {}decoder_read_uint8(decoder_p);'.format(
+                    unique_length,
+                    self.prefix),
                 '',
                 'if (({} != 1u) || ({} > {}u)) {{'.format(unique_number_of_length_bytes,
                                                           unique_length,
                                                           checker.maximum),
-                '    decoder_abort(decoder_p, EBADLENGTH);',
+                '    {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
                 '',
                 '    return;',
                 '}',
@@ -1531,9 +1571,10 @@ class _Generator(Generator):
                 '{} = minimum_uint_length(src_p->{}length);'.format(
                     unique_number_of_length_bytes,
                     location),
-                'encoder_append_uint8(encoder_p, {});'.format(
+                '{}encoder_append_uint8(encoder_p, {});'.format(
+                    self.prefix,
                     unique_number_of_length_bytes),
-                'encoder_append_uint(encoder_p,',
+                '{}encoder_append_uint(encoder_p,'.format(self.prefix),
                 '                    src_p->{}length,'.format(location),
                 '                    {});'.format(unique_number_of_length_bytes),
                 '',
@@ -1542,14 +1583,18 @@ class _Generator(Generator):
                     loc=location),
             ] + indent_lines(encode_lines)
             decode_lines = [
-                '{} = decoder_read_uint8(decoder_p);'.format(
-                    unique_number_of_length_bytes),
-                'dst_p->{}length = {}decoder_read_uint('.format(location, cast),
+                '{} = {}decoder_read_uint8(decoder_p);'.format(
+                    unique_number_of_length_bytes,
+                    self.prefix,),
+                'dst_p->{}length = {}{}decoder_read_uint('.format(
+                    location,
+                    cast,
+                    self.prefix,),
                 '    decoder_p,',
                 '    {});'.format(unique_number_of_length_bytes),
                 '',
                 'if (dst_p->{}length > {}u) {{'.format(location, checker.maximum),
-                '    decoder_abort(decoder_p, EBADLENGTH);',
+                '    {}decoder_abort(decoder_p, EBADLENGTH);'.format(self.prefix),
                 '',
                 '    return;',
                 '}',
@@ -1672,17 +1717,20 @@ class _Generator(Generator):
             ('enumerated_value_length(', ENUMERATED_VALUE_LENGTH)
         ]
 
-        for pattern, definition in functions:
-            is_in_helpers = any([pattern in helper for helper in helpers])
+        if not self.modular:
+            for pattern, definition in functions:
+                is_in_helpers = any([pattern in helper for helper in helpers])
 
-            if pattern in definitions or is_in_helpers:
-                helpers.insert(0, definition)
+                if pattern in definitions or is_in_helpers:
+                    helpers.insert(0, definition)
 
         for additional_helpers in self.additional_helpers.values():
             helpers.extend(additional_helpers + [''])
 
-        return [ENCODER_AND_DECODER_STRUCTS] + helpers + ['']
+        if not self.modular:
+            helpers = [ENCODER_AND_DECODER_STRUCTS] + helpers
+        return helpers + ['']
 
 
-def generate(compiled, namespace):
-    return _Generator(namespace).generate(compiled)
+def generate(compiled, namespace, modular):
+    return _Generator(namespace, modular).generate(compiled)

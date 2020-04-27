@@ -45,14 +45,14 @@ ssize_t {namespace}_{module_name_snake}_{type_name_snake}_decode(
 
 DEFINITION_INNER_FMT = '''\
 static void {namespace}_{module_name_snake}_{type_name_snake}_encode_inner(
-    struct encoder_t *encoder_p,
+    struct {prefix}encoder_t *encoder_p,
     const struct {namespace}_{module_name_snake}_{type_name_snake}_t *src_p)
 {{
 {encode_body}\
 }}
 
 static void {namespace}_{module_name_snake}_{type_name_snake}_decode_inner(
-    struct decoder_t *decoder_p,
+    struct {prefix}decoder_t *decoder_p,
     struct {namespace}_{module_name_snake}_{type_name_snake}_t *dst_p)
 {{
 {decode_body}\
@@ -65,7 +65,7 @@ ssize_t {namespace}_{module_name_snake}_{type_name_snake}_encode(
     size_t size,
     const struct {namespace}_{module_name_snake}_{type_name_snake}_t *src_p)
 {{
-    struct encoder_t encoder;
+    struct {prefix}encoder_t encoder;
 
     encoder_init(&encoder, dst_p, size);
     {namespace}_{module_name_snake}_{type_name_snake}_encode_inner(&encoder, src_p);
@@ -78,7 +78,7 @@ ssize_t {namespace}_{module_name_snake}_{type_name_snake}_decode(
     const uint8_t *src_p,
     size_t size)
 {{
-    struct decoder_t decoder;
+    struct {prefix}decoder_t decoder;
 
     decoder_init(&decoder, src_p, size);
     {namespace}_{module_name_snake}_{type_name_snake}_decode_inner(&decoder, dst_p);
@@ -165,7 +165,7 @@ def format_default(default):
 
 class Generator(object):
 
-    def __init__(self, namespace):
+    def __init__(self, namespace, modular=False, prefix=''):
         self.namespace = canonical(namespace)
         self.asn1_members_backtrace = []
         self.c_members_backtrace = []
@@ -177,6 +177,11 @@ class Generator(object):
         self.encode_variable_lines = []
         self.decode_variable_lines = []
         self.used_user_types = []
+        self.modular = modular
+        if self.modular:
+            self.prefix = prefix
+        else:
+            self.prefix = ''
 
     def reset_type(self):
         self.helper_lines = []
@@ -562,7 +567,8 @@ class Generator(object):
     def generate_definition(self):
         return DEFINITION_FMT.format(namespace=self.namespace,
                                      module_name_snake=self.module_name_snake,
-                                     type_name_snake=self.type_name_snake)
+                                     type_name_snake=self.type_name_snake,
+                                     prefix=self.prefix)
 
     def generate_definition_inner(self, compiled_type):
         encode_lines, decode_lines = self.generate_definition_inner_process(
@@ -582,7 +588,8 @@ class Generator(object):
                                            module_name_snake=self.module_name_snake,
                                            type_name_snake=self.type_name_snake,
                                            encode_body='\n'.join(encode_lines),
-                                           decode_body='\n'.join(decode_lines))
+                                           decode_body='\n'.join(decode_lines),
+                                           prefix=self.prefix)
 
     def generate(self, compiled):
         user_types = {}
