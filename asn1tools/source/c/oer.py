@@ -1296,13 +1296,15 @@ class _Generator(Generator):
     def format_user_type_inner(self, type_name, module_name):
         prefix = self.get_user_type_prefix(type_name, module_name)
         encode_lines = [
-            '{}_encode_inner(encoder_p, &src_p->{});'.format(
+            '{}_encode{}(encoder_p, &src_p->{});'.format(
                 prefix,
+                '' if self.modular else '_inner',
                 self.location_inner())
         ]
         decode_lines = [
-            '{}_decode_inner(decoder_p, &dst_p->{});'.format(
+            '{}_decode{}(decoder_p, &dst_p->{});'.format(
                 prefix,
+                '' if self.modular else '_inner',
                 self.location_inner())
         ]
 
@@ -1457,8 +1459,10 @@ class _Generator(Generator):
         unique_enum_length = self.add_unique_variable('uint8_t {};',
                                                       'enum_length')
         encode_lines += [
-            '{} = enumerated_value_length(src_p->{});'.format(
-                unique_enum_length, self.location_inner()),
+            '{} = {}enumerated_value_length(src_p->{});'.format(
+                unique_enum_length,
+                self.prefix,
+                self.location_inner()),
             '',
             'if ({} != 0u) {{'.format(unique_enum_length),
             '    {}encoder_append_uint8(encoder_p, 0x80u | {});'.format(
@@ -1504,8 +1508,10 @@ class _Generator(Generator):
 
     def get_encoded_enumerated_length(self, type_):
         with self.members_backtrace_push(type_.name):
-            return ['(uint32_t)enumerated_value_length((int32_t)src_p->{})'.format(
-                self.location_inner()), 1]
+            return ['(uint32_t){}enumerated_value_length((int32_t)src_p->{})'.format(
+                self.prefix,
+                self.location_inner()),
+                1]
 
     def format_sequence_of_inner(self, type_, checker):
         unique_number_of_length_bytes = self.add_unique_variable(
@@ -1528,8 +1534,9 @@ class _Generator(Generator):
 
         if checker.minimum == checker.maximum:
             encode_lines = [
-                '{} = minimum_uint_length({});'.format(
+                '{} = {}minimum_uint_length({});'.format(
                     unique_number_of_length_bytes,
+                    self.prefix,
                     checker.maximum),
                 '{}encoder_append_uint8(encoder_p, {});'.format(
                     self.prefix,
@@ -1568,8 +1575,9 @@ class _Generator(Generator):
             else:
                 cast = ''
             encode_lines = [
-                '{} = minimum_uint_length(src_p->{}length);'.format(
+                '{} = {}minimum_uint_length(src_p->{}length);'.format(
                     unique_number_of_length_bytes,
+                    self.prefix,
                     location),
                 '{}encoder_append_uint8(encoder_p, {});'.format(
                     self.prefix,
@@ -1617,7 +1625,8 @@ class _Generator(Generator):
         with self.c_members_backtrace_push(type_.name):
 
             return [1,
-                    '(uint32_t)minimum_uint_length(src_p->{loc}length)'.format(
+                    '(uint32_t){prefix}minimum_uint_length(src_p->{loc}length)'.format(
+                        prefix=self.prefix,
                         loc=self.location_inner('', '.')),
                     '(uint32_t)(src_p->{loc}length * ({inner_length}))'.format(
                         loc=self.location_inner('', '.'), inner_length=inner_length)]

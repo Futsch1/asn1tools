@@ -267,11 +267,15 @@ def _do_generate_c_source(args):
         name = os.path.splitext(name)[0]
     else:
         name = args.namespace
+    if args.filenames is None:
+        file_name = name
+    else:
+        file_name = args.filenames
 
-    filename_h = name + '.h'
-    filename_c = name + '.c'
-    fuzzer_filename_c = name + '_fuzzer.c'
-    fuzzer_filename_mk = name + '_fuzzer.mk'
+    filename_h = file_name + '.h'
+    filename_c = file_name + '.c'
+    fuzzer_filename_c = file_name + '_fuzzer.c'
+    fuzzer_filename_mk = file_name + '_fuzzer.mk'
 
     compiled = compile_files(args.specification,
                              args.codec)
@@ -398,7 +402,10 @@ def _main():
         help='Codec to generate code for (default: oer).')
     subparser.add_argument(
         '-n', '--namespace',
-        help='Namespace of defines, structs, functions, files, etc.')
+        help='Namespace of defines, structs, functions, etc.')
+    subparser.add_argument(
+        '-i', '--filenames',
+        help='Filenames')
     subparser.add_argument(
         '-f', '--generate-fuzzer',
         action='store_true',

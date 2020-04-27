@@ -43,15 +43,41 @@ ssize_t {namespace}_{module_name_snake}_{type_name_snake}_decode(
     size_t size);
 '''
 
+DECLARATION_INNER_FMT = '''\
+/**
+ * Encode type {type_name} defined in module {module_name}.
+ *
+ * @param[inout] encoder_p Encoder structure to use.
+ * @param[in] src_p Data to encode.
+ *
+ * @return Encoded data length or negative error code.
+ */
+void {namespace}_{module_name_snake}_{type_name_snake}_encode(
+    struct {prefix}encoder_t* encoder_p,
+    const struct {namespace}_{module_name_snake}_{type_name_snake}_t *src_p);
+
+/**
+ * Decode type {type_name} defined in module {module_name}.
+ *
+ * @param[inout] decoder_p Decoder to use.
+ * @param[out] dst_p Decoded data.
+ *
+ * @return Number of bytes decoded or negative error code.
+ */
+void {namespace}_{module_name_snake}_{type_name_snake}_decode(
+    struct {prefix}decoder_t* decoder_p,
+    struct {namespace}_{module_name_snake}_{type_name_snake}_t *dst_p);
+'''
+
 DEFINITION_INNER_FMT = '''\
-static void {namespace}_{module_name_snake}_{type_name_snake}_encode_inner(
+{static}void {namespace}_{module_name_snake}_{type_name_snake}_encode{inner}(
     struct {prefix}encoder_t *encoder_p,
     const struct {namespace}_{module_name_snake}_{type_name_snake}_t *src_p)
 {{
 {encode_body}\
 }}
 
-static void {namespace}_{module_name_snake}_{type_name_snake}_decode_inner(
+{static}void {namespace}_{module_name_snake}_{type_name_snake}_decode{inner}(
     struct {prefix}decoder_t *decoder_p,
     struct {namespace}_{module_name_snake}_{type_name_snake}_t *dst_p)
 {{
@@ -558,11 +584,19 @@ class Generator(object):
         ]
 
     def generate_declaration(self):
-        return DECLARATION_FMT.format(namespace=self.namespace,
-                                      module_name=self.module_name,
-                                      type_name=self.type_name,
-                                      module_name_snake=self.module_name_snake,
-                                      type_name_snake=self.type_name_snake)
+        if self.modular:
+            return DECLARATION_INNER_FMT.format(namespace=self.namespace,
+                                                module_name=self.module_name,
+                                                type_name=self.type_name,
+                                                module_name_snake=self.module_name_snake,
+                                                type_name_snake=self.type_name_snake,
+                                                prefix=self.prefix)
+        else:
+            return DECLARATION_FMT.format(namespace=self.namespace,
+                                          module_name=self.module_name,
+                                          type_name=self.type_name,
+                                          module_name_snake=self.module_name_snake,
+                                          type_name_snake=self.type_name_snake)
 
     def generate_definition(self):
         return DEFINITION_FMT.format(namespace=self.namespace,
@@ -589,7 +623,9 @@ class Generator(object):
                                            type_name_snake=self.type_name_snake,
                                            encode_body='\n'.join(encode_lines),
                                            decode_body='\n'.join(decode_lines),
-                                           prefix=self.prefix)
+                                           prefix=self.prefix,
+                                           inner='' if self.modular else '_inner',
+                                           static='' if self.modular else 'static ')
 
     def generate(self, compiled):
         user_types = {}
@@ -628,12 +664,18 @@ class Generator(object):
         definitions_inner = []
         definitions = []
 
+        if self.modular:
+            declarations += ['struct {prefix}encoder_t;'.format(prefix=self.prefix),
+                             'struct {prefix}decoder_t;'.format(prefix=self.prefix),
+                             '']
+
         for user_type_name in user_type_sorted_names:
             user_type = user_types[user_type_name]
             type_declarations.extend(user_type.type_declaration)
             declarations.append(user_type.declaration)
             definitions_inner.append(user_type.definition_inner)
-            definitions.append(user_type.definition)
+            if not self.modular:
+                definitions.append(user_type.definition)
 
         type_declarations = '\n'.join(type_declarations)
         declarations = '\n'.join(declarations)

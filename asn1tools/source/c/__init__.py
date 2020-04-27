@@ -4,6 +4,7 @@ from ...version import __version__
 from . import oer
 from . import uper
 from .utils import camel_to_snake_case
+from . import modular as modular_fmt
 
 
 HEADER_FMT = '''\
@@ -402,17 +403,32 @@ def generate(compiled,
     else:
         raise Exception()
 
-    header = HEADER_FMT.format(version=__version__,
-                               date=date,
-                               include_guard=include_guard,
-                               structs=structs,
-                               declarations=declarations)
+    if modular:
+        header = modular_fmt.HEADER_FMT.format(version=__version__,
+                                               date=date,
+                                               include_guard=include_guard,
+                                               structs=structs,
+                                               declarations=declarations,
+                                               filename=header_name)
 
-    source = SOURCE_FMT.format(version=__version__,
-                               date=date,
-                               header=header_name,
-                               helpers=helpers,
-                               definitions=definitions)
+        source = modular_fmt.SOURCE_FMT.format(version=__version__,
+                                               date=date,
+                                               header=header_name,
+                                               helpers=helpers,
+                                               definitions=definitions,
+                                               filename=source_name)
+    else:
+        header = HEADER_FMT.format(version=__version__,
+                                   date=date,
+                                   include_guard=include_guard,
+                                   structs=structs,
+                                   declarations=declarations)
+
+        source = SOURCE_FMT.format(version=__version__,
+                                   date=date,
+                                   header=header_name,
+                                   helpers=helpers,
+                                   definitions=definitions)
 
     fuzzer_source, fuzzer_makefile = _generate_fuzzer_source(
         namespace,
