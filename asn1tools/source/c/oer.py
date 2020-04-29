@@ -1092,7 +1092,7 @@ class _Generator(Generator):
                 self.prefix,
                 unique_tmp_addition_mask),
             '',
-            '        if (decoder_get_result(decoder_p) < 0) {',
+            '        if ({}decoder_get_result(decoder_p) < 0) {'.format(self.prefix),
             '',
             '            return;',
             '        }',
@@ -1200,7 +1200,8 @@ class _Generator(Generator):
                 if addition_length is not None:
                     lengths.append(get_length_determinant_length(addition_length))
                 else:
-                    lengths.append('length_determinant_length({})'.format(
+                    lengths.append('{}length_determinant_length({})'.format(
+                        self.prefix,
                         encoded_lengths_as_string(lengths)))
                 lengths.extend(additions_lengths)
 
