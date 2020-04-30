@@ -1435,7 +1435,7 @@ class _Generator(Generator):
         unique_enum_length = self.add_unique_variable('uint8_t {};',
                                                       'enum_length')
         encode_lines += [
-            '{} = enumerated_value_length(src_p->{});'.format(
+            '{} = enumerated_value_length((int32_t)src_p->{});'.format(
                 unique_enum_length,
                 self.location_inner()),
             '',

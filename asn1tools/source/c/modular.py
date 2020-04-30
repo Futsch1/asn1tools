@@ -15,8 +15,8 @@ HEADER_FMT = '''\
 *
 ***********************************************/
 
-//parasoft suppress item EUCHNER-CODING_RULES_7_4_4_a-3 reason "Generated code"
-//parasoft suppress item EUCHNER-CODING_RULES_7_4_5_a-3 reason "Generated code"
+// parasoft-begin-suppress EUCHNER-CODING_RULES_7_4_4_a-3 "Generated code"
+// parasoft-begin-suppress EUCHNER-CODING_RULES_7_4_5_a-3 "Generated code"
 
 /***********************************************
 * INCLUDES
@@ -34,6 +34,9 @@ HEADER_FMT = '''\
 ***********************************************/
 {declarations}
 
+// parasoft-end-suppress EUCHNER-CODING_RULES_7_4_4_a-3 "Generated code"
+// parasoft-end-suppress EUCHNER-CODING_RULES_7_4_5_a-3 "Generated code"
+
 #endif
 '''
 
@@ -50,12 +53,11 @@ SOURCE_FMT = '''\
 *
 ***********************************************/
 
-//parasoft suppress item MISRA2012-RULE-8_7-4 reason "Generated code is not optimized to remove unreferenced functions"
-//parasoft suppress item MISRA2012-RULE-10_5_a-4 reason "Casting enums is required during deserialization"
-//parasoft suppress item MISRA2012-RULE-15_5-4 reason "Done in generated code for simplicity of functions"
+// parasoft-begin-suppress MISRA2012-RULE-8_7-4 "Generated code is not optimized to remove unreferenced functions"
+// parasoft-begin-suppress MISRA2012-RULE-10_5_a-4 "Casting enums is required during deserialization"
+// parasoft-begin-suppress MISRA2012-RULE-15_5-4 "Done in generated code for simplicity of functions"
 
-//parasoft suppress item EUCHNER-CODING_RULES_7_4_9_a-3 reason "Generated code"
-
+// parasoft-begin-suppress EUCHNER-CODING_RULES_7_4_9_a-3 "Generated code"
 
 /***********************************************
 * INCLUDES
@@ -69,5 +71,11 @@ SOURCE_FMT = '''\
 * LOCAL FUNCTIONS DEFINITIONS
 ***********************************************/
 {helpers}
-{definitions}\
+{definitions}
+
+// parasoft-end-suppress MISRA2012-RULE-8_7-4 "Generated code is not optimized to remove unreferenced functions"
+// parasoft-end-suppress MISRA2012-RULE-10_5_a-4 "Casting enums is required during deserialization"
+// parasoft-end-suppress MISRA2012-RULE-15_5-4 "Done in generated code for simplicity of functions"
+
+// parasoft-end-suppress EUCHNER-CODING_RULES_7_4_9_a-3 "Generated code"
 '''
