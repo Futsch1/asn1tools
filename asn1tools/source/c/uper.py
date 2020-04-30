@@ -1020,7 +1020,7 @@ class _Generator(Generator):
             if pattern in definitions or is_in_helpers:
                 helpers.insert(0, definition)
 
-        return [ENCODER_AND_DECODER_STRUCTS] + helpers + ['']
+        return [ENCODER_AND_DECODER_STRUCTS] + helpers + [''], definitions
 
 
 def generate(compiled, namespace):

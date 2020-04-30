@@ -345,6 +345,13 @@ class Generator(object):
             self.base_variables.add(name)
             unique_name = name
 
+        if self.modular:
+            unique_name = snake_to_camel_case(unique_name)
+            if '[' in fmt:
+                unique_name = 'a' + unique_name
+            elif 'int' in fmt:
+                unique_name = 'i' + unique_name
+
         line = fmt.format(unique_name)
 
         if variable_lines is None:
@@ -680,7 +687,8 @@ class Generator(object):
         type_declarations = '\n'.join(type_declarations)
         declarations = '\n'.join(declarations)
         definitions = '\n'.join(definitions_inner + definitions)
-        helpers = '\n'.join(self.generate_helpers(definitions))
+        helpers, definitions = self.generate_helpers(definitions)
+        helpers = '\n'.join(helpers)
 
         return type_declarations, declarations, helpers, definitions
 
@@ -722,6 +730,9 @@ def camel_to_snake_case(value):
 
     return value
 
+
+def snake_to_camel_case(value):
+    return ''.join(letter.capitalize() or '_' for letter in value.split('_'))
 
 def join_lines(lines, suffix):
     return[line + suffix for line in lines[:-1]] + lines[-1:]
