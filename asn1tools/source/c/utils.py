@@ -814,6 +814,7 @@ def topological_sort(graph):
 
 def modularize(strings):
     strings = strings.replace('decoder_p', '_pDecoder')
+    strings = strings.replace('encoder_p', '_pEncoder')
     strings = strings.replace('src_p', '_pSrc')
     strings = strings.replace('dst_p', '_pDst')
     strings = strings.replace('size_t', 'int32_t')
