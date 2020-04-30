@@ -690,6 +690,10 @@ class Generator(object):
         helpers, definitions = self.generate_helpers(definitions)
         helpers = '\n'.join(helpers)
 
+        if self.modular:
+            declarations = modularize(declarations)
+            definitions = modularize(definitions)
+
         return type_declarations, declarations, helpers, definitions
 
     def format_type(self, type_, checker):
@@ -806,3 +810,11 @@ def topological_sort(graph):
         path = recurse(node, path)
 
     return path
+
+
+def modularize(strings):
+    strings = strings.replace('decoder_p', '_pDecoder')
+    strings = strings.replace('src_p', '_pSrc')
+    strings = strings.replace('dst_p', '_pDst')
+    strings = strings.replace('size_t', 'int32_t')
+    return strings
