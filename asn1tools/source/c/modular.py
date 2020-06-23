@@ -13,6 +13,9 @@ HEADER_FMT = '''\
 *
 *  @brief  		Generated code for encoding/decoding data streams
 *
+* @HISTORY_START
+* @HISTORY_END
+*
 ***********************************************/
 
 // parasoft-begin-suppress EUCHNER-CODING_RULES_7_4_4_a-3 "Generated code"
@@ -50,6 +53,9 @@ SOURCE_FMT = '''\
 *  @author      asn1tools version {version}
 *
 *  @brief  		Generated code for encoding/decoding data streams
+*
+* @HISTORY_START
+* @HISTORY_END
 *
 ***********************************************/
 
