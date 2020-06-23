@@ -11,7 +11,7 @@ HEADER_FMT = '''\
 *
 *  @author      asn1tools version {version}
 *
-*  @brief  		Generated code for encoding/decoding data streams
+*  @brief  	    Generated code for encoding/decoding data streams
 *
 * @HISTORY_START
 * @HISTORY_END
@@ -52,7 +52,7 @@ SOURCE_FMT = '''\
 *
 *  @author      asn1tools version {version}
 *
-*  @brief  		Generated code for encoding/decoding data streams
+*  @brief  	    Generated code for encoding/decoding data streams
 *
 * @HISTORY_START
 * @HISTORY_END
