@@ -22,7 +22,6 @@ from .per import Sequence
 from .per import Set
 from .per import UTF8String
 from .per import GeneralString
-from .per import BMPString
 from .per import GraphicString
 from .per import TeletexString
 from .per import UniversalString
@@ -587,9 +586,9 @@ class Compiler(per.Compiler):
         elif type_name == 'DATE-TIME':
             compiled = DateTime(name)
         elif type_name == 'BIT STRING':
-            has_named_bits = ('named-bits' in type_descriptor)
             compiled = BitString(name,
-                                 has_named_bits,
+                                 self.get_named_bits(type_descriptor,
+                                                     module_name),
                                  *self.get_size_range(type_descriptor,
                                                       module_name))
         elif type_name == 'ANY':

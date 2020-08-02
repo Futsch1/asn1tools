@@ -744,11 +744,12 @@ class Null(Type):
 
 class BitString(Type):
 
-    def __init__(self, name, minimum, maximum, has_extension_marker):
+    def __init__(self, name, named_bits, minimum, maximum, has_extension_marker):
         super(BitString, self).__init__(name,
                                         'BIT STRING',
                                         Tag.BIT_STRING)
         self.number_of_bits = None
+        self.named_bits = named_bits
 
         if minimum is not None or maximum is not None:
             if not has_extension_marker:
@@ -1288,14 +1289,6 @@ class Recursive(Type, compiler.Recursive):
 
 class CompiledType(compiler.CompiledType):
 
-    def __init__(self, type_):
-        super(CompiledType, self).__init__()
-        self._type = type_
-
-    @property
-    def type(self):
-        return self._type
-
     def encode(self, data):
         encoder = Encoder()
         self._type.encode(data, encoder)
@@ -1306,9 +1299,6 @@ class CompiledType(compiler.CompiledType):
         decoder = Decoder(bytearray(data))
 
         return self._type.decode(decoder)
-
-    def __repr__(self):
-        return repr(self._type)
 
 
 class Compiler(compiler.Compiler):
@@ -1407,6 +1397,8 @@ class Compiler(compiler.Compiler):
             compiled = DateTime(name)
         elif type_name == 'BIT STRING':
             compiled = BitString(name,
+                                 self.get_named_bits(type_descriptor,
+                                                     module_name),
                                  *self.get_size_range(type_descriptor,
                                                       module_name))
         elif type_name == 'ANY':

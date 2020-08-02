@@ -83,15 +83,32 @@ def clean_bit_string_value(value, has_named_bits):
 
 class CompiledType(object):
 
-    def __init__(self):
+    def __init__(self, type_):
         self.constraints_checker = None
         self.type_checker = None
+        self._type = type_
+
+    @property
+    def type(self):
+        return self._type
 
     def check_types(self, data):
         return self.type_checker.encode(data)
 
     def check_constraints(self, data):
         return self.constraints_checker.encode(data)
+
+    def encode(self, data):
+        raise NotImplementedError('This codec does not support encode().')
+
+    def decode(self, data):
+        raise NotImplementedError('This codec does not support decode().')
+
+    def decode_with_length(self, data):
+        raise NotImplementedError('This codec does not support decode_with_length().')
+
+    def __repr__(self):
+        return repr(self._type)
 
 
 class Recursive(object):
@@ -140,26 +157,22 @@ class OpenTypeSequenceOf(object):
 class CompiledOpenTypes(CompiledType):
 
     def __init__(self, compiled_open_types, compiled_type):
-        super(CompiledOpenTypes, self).__init__()
+        super(CompiledOpenTypes, self).__init__(compiled_type)
         self._compiled_open_types = compiled_open_types
-        self._inner = compiled_type
 
     @property
     def type(self):
-        return self._inner.type
+        return self._type.type
 
     def encode(self, data, **kwargs):
         # print()
         # print('data:', data)
         # print(self._compiled_open_types)
 
-        return self._inner.encode(data, **kwargs)
+        return self._type.encode(data, **kwargs)
 
     def decode(self, data):
-        return self._inner.decode(data)
-
-    def __repr__(self):
-        return repr(self._inner)
+        return self._type.decode(data)
 
 
 class Compiler(object):
@@ -935,8 +948,19 @@ class Compiler(object):
     def get_with_components(self, type_descriptor):
         return type_descriptor.get('with-components', None)
 
-    def get_named_numbers(self, type_descriptor):
-        return type_descriptor.get('named-numbers', None)
+    def get_named_bits(self, type_descriptor, module_name):
+        named_bits = type_descriptor.get('named-bits', None)
+        if named_bits is not None:
+            named_bit_values = []
+
+            for value in named_bits:
+                if value != EXTENSION_MARKER and not value[1].isdigit():
+                    lookup = self.lookup_value(value[1], module_name)
+                    named_bit_values.append((value[0], lookup[0]['value']))
+                else:
+                    named_bit_values.append((value[0], int(value[1])))
+
+            return named_bit_values
 
     def is_explicit_tag(self, type_descriptor):
         try:
