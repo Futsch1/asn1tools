@@ -25,7 +25,7 @@ HEADER_FMT = '''\
 * INCLUDES
 ***********************************************/
 #include <stdbool.h>
-#include "Types/eBasicTypes.h"
+#include "Types/INC_Types_Generic/eBasicTypes.h"
 
 /***********************************************
 * DATA STRUCTURES
