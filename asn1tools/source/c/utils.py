@@ -738,13 +738,7 @@ class Generator(object):
         return type_declarations, declarations, helpers, definitions
 
     def format_default(self, type_):
-        if type_.type_name == 'BOOLEAN':
-            return str(type_.default).lower()
-        elif type_.type_name == 'ENUMERATED':
-            with self.members_backtrace_push(type_.name):
-                return '{}_{}_e'.format(self.location, type_.default)
-        else:
-            return str(type_.default)
+        raise NotImplementedError('To be implemented by subclasses.')
 
     def format_type(self, type_, checker):
         raise NotImplementedError('To be implemented by subclasses.')
