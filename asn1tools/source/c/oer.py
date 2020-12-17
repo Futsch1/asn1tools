@@ -1087,8 +1087,8 @@ class _Generator(Generator):
             for pattern, definition in functions:
                 is_in_helpers = any([pattern in helper for helper in helpers])
 
-                    if pattern in definitions or is_in_helpers:
-                        helpers.insert(0, definition)
+                if pattern in definitions or is_in_helpers:
+                    helpers.insert(0, definition)
 
         for additional_helpers in self.additional_helpers.values():
             helpers.extend(additional_helpers + [''])
@@ -1103,5 +1103,5 @@ class _Generator(Generator):
         return helpers + [''], definitions
 
 
-def generate(compiled, namespace, modular):
+def generate(compiled, namespace, modular=False):
     return _Generator(namespace, modular).generate(compiled)
