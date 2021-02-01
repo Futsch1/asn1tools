@@ -10,11 +10,6 @@ import binascii
 import logging
 from pprint import pformat
 
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-
 from .compiler import compile_dict
 from .compiler import compile_string
 from .compiler import compile_files
@@ -214,46 +209,6 @@ def _handle_command_help():
     print('  help')
 
 
-def _do_shell(_args):
-    commands = ['compile', 'convert', 'help', 'exit']
-    completer = WordCompleter(commands, WORD=True)
-    user_home = os.path.expanduser('~')
-    history = FileHistory(os.path.join(user_home, '.asn1tools-history.txt'))
-    session = PromptSession(completer=completer,
-                            complete_while_typing=True,
-                            auto_suggest=AutoSuggestFromHistory(),
-                            enable_history_search=True,
-                            history=history)
-    input_spec = None
-    output_spec = None
-    output_codec = None
-
-    print("\nWelcome to the asn1tools shell!\n")
-
-    while True:
-        try:
-            line = session.prompt(u'$ ')
-        except EOFError:
-            return
-
-        line = line.strip()
-
-        if line:
-            if line.startswith('compile'):
-                input_spec, output_spec, output_codec = _handle_command_compile(line)
-            elif line.startswith('convert'):
-                _handle_command_convert(line,
-                                        input_spec,
-                                        output_spec,
-                                        output_codec)
-            elif line == 'help':
-                _handle_command_help()
-            elif line == 'exit':
-                return
-            else:
-                print('{}: command not found'.format(line))
-
-
 def _do_parse(args):
     parsed = parse_files(args.specification)
 
@@ -375,11 +330,6 @@ def _main():
         'hexstring',
         help='Hexstring to convert, or - to read hexstrings from standard input.')
     subparser.set_defaults(func=_do_convert)
-
-    # The 'shell' subparser.
-    subparser = subparsers.add_parser('shell',
-                                      description='An interactive shell.')
-    subparser.set_defaults(func=_do_shell)
 
     # The 'parse' subparser.
     subparser = subparsers.add_parser('parse',
